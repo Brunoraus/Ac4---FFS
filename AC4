@@ -1,0 +1,52 @@
+from flask import Flask, request, jsonify
+import sqlite3
+
+app = Flask(__name__)
+DB_NAME = 'database.db'
+
+# Rota para o método GET
+@app.route('/alunos', methods=['GET'])
+def get_alunos():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM tb_aluno')
+    rows = cursor.fetchall()
+    conn.close()
+
+    alunos = []
+    for row in rows:
+        aluno = {
+            'id': row[0],
+            'nome': row[1],
+            'turma': row[2]
+        }
+        alunos.append(aluno)
+
+    return jsonify(alunos)
+
+
+# Rota para o método POST
+@app.route('/alunos', methods=['POST'])
+def add_aluno():
+    aluno = request.get_json()
+    nome = aluno['nome']
+    turma = aluno['turma']
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO tb_aluno (nome, turma) VALUES (?, ?)', (nome, turma))
+    conn.commit()
+    conn.close()
+
+    return 'Aluno adicionado com sucesso'
+
+
+if __name__ == '__main__':
+    # Criação da tabela no banco de dados
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS tb_aluno (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, turma TEXT)')
+    conn.close()
+
+    # Execução da aplicação Flask
+    app.run(debug=True)
